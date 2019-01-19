@@ -10,20 +10,6 @@ library.using([
   "basic-styles"],
   function(lib, WebSite, BrowserBridge, element, addHtml, bridgeModule, basicStyles) {
 
-    var page = [
-      element({
-        "id": "player"}),
-      element(".timeline",
-        element(".blocks")),
-      element(
-        "button.unselected",
-        "Mark as interesting"),
-      " ",
-      element(
-        "button.unselected  ",
-        "Mark as boring"),
-    ]
-
     var site = new WebSite()
 
     var baseBridge = new BrowserBridge()
@@ -135,6 +121,20 @@ library.using([
             },
           }})
       })
+
+    var page = [
+      element({
+        "id": "player"}),
+      element(".timeline",
+        element(".blocks")),
+      element(
+        "button.unselected",
+        "Mark as interesting"),
+      " ",
+      element(
+        "button.unselected  ",
+        "Mark as boring"),
+    ]
 
     site.start(1010)
 
