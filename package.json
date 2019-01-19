@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "module-library": "*",
+    "web-element": "*",
+    "web-site": "*",
+    "browser-bridge": "*"
+  },
+  "main": "meta.js"
+}
