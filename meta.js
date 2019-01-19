@@ -49,10 +49,21 @@ library.using([
         "margin-right": "5px",
         "width": "45px",
         "height": "45px",
-        "background": "gray"}),
+        "background": "gray",
+
+        ".interesting": {
+          "background": "#0ad188"},
+      }),
     ])
 
     baseBridge.addToHead(stylesheet)
+
+    var state = baseBridge.defineSingleton(
+      "state",
+      function() {
+        return {
+          "player": null,
+          "interestingMode": null}})
 
     var init = baseBridge.defineFunction([
       bridgeModule(lib, "web-element", baseBridge),
@@ -62,7 +73,7 @@ library.using([
 
         var html = ""
         for(var i=0; i<blockCount; i++) {
-          html += element(".block").html()
+          html += element(".block.block-"+i).html()
         }
 
         var blocks = document.querySelector(".blocks")
@@ -71,16 +82,16 @@ library.using([
       })
 
     var updateBlocks = baseBridge.defineFunction(
-      function updateBlocks(state, duration, currentTime) {
+      function updateBlocks(playerState, duration, currentTime) {
 
-        console.log(state)
+        console.log(playerState)
 
         var blocks = document.querySelector(".blocks")
         var elapsedPixels = currentTime*2 * 50
         var offsetAtEnd = duration*2*50
         var timeToEnd = duration - currentTime
 
-        if (state == "playing") {
+        if (playerState == "playing") {
           blocks.style["transition-duration"] = timeToEnd+"s"
           blocks.style["margin-left"] = "-"+offsetAtEnd+"px"
         } else {
@@ -90,11 +101,12 @@ library.using([
       })
 
     baseBridge.defineFunction([
+      state,
       init,
       updateBlocks],
-      function onYouTubePlayerAPIReady(init, updateBlocks) {
+      function onYouTubePlayerAPIReady(state, init, updateBlocks) {
 
-        function stateToString(state) {
+        function stateToString(playerState) {
           return {
             "-1": "unstarted",
             "0": "ended",
@@ -102,9 +114,9 @@ library.using([
             "2": "paused",
             "3": "buffering",
             "5": "video cued",
-          }[state.data.toString()]}
+          }[playerState.data.toString()]}
 
-        var player = new YT.Player(
+        var player = state.player = new YT.Player(
           "player",{
           "height": "360",
           "width": "640",
@@ -113,13 +125,44 @@ library.using([
             "onReady": function() {
               init(
                 player.getDuration())},
-            "onStateChange": function(state) {
+            "onStateChange": function(playerState) {
               updateBlocks(
-                stateToString(state),
+                stateToString(playerState),
                 player.getDuration(),
                 player.getCurrentTime())
             },
           }})
+      })
+
+    var toggleInteresting = baseBridge.defineFunction([
+      state],
+      function toggleInteresting(state, isInteresting) {
+
+        function getButton(isInteresting) {
+          return document.querySelector((isInteresting ? ".interesting" : ".boring")+"-button")
+        }
+
+        if (state.interestingMode != isInteresting) {
+          var button = getButton(isInteresting) 
+          var otherButton = getButton(!isInteresting)
+          button.classList.remove("unselected")
+          button.classList.add("selected")
+          otherButton.classList.remove("selected")
+          otherButton.classList.add("unselected")
+
+          state.interestingMode = isInteresting
+
+        } else {
+          var button = getButton(state.interestingMode)           
+          button.classList.remove("selected")
+          button.classList.add("unselected")
+
+          state.interestingMode = null
+
+        }
+
+        var blockId = Math.floor(state.player.getCurrentTime() * 2)
+        document.querySelector(".block-"+blockId).classList.add("interesting")
       })
 
     var page = [
@@ -128,12 +171,14 @@ library.using([
       element(".timeline",
         element(".blocks")),
       element(
-        "button.unselected",
-        "Mark as interesting"),
+        "button.unselected.interesting-button",
+        "Mark as interesting",{
+        "onclick": toggleInteresting.withArgs(true).evalable()}),
       " ",
       element(
-        "button.unselected  ",
-        "Mark as boring"),
+        "button.unselected.boring-button",
+        "Mark as boring",{
+        "onclick": toggleInteresting.withArgs(false).evalable()}),
     ]
 
     site.start(1010)
