@@ -13,8 +13,8 @@ library.using([
     var page = [
       element({
         "id": "player"}),
-      element({
-        "class": "blocks"}),
+      element(".timeline",
+        element(".blocks")),
       element(
         "button.unselected",
         "Mark as interesting"),
@@ -48,6 +48,11 @@ library.using([
       }),
 
       element.style(
+        ".timeline",{
+        "border-left": "2px solid black",
+        "padding": "5px 0"}),
+
+      element.style(
         ".blocks",{
         "white-space": "nowrap"}),
 
@@ -65,21 +70,42 @@ library.using([
     var init = baseBridge.defineFunction([
       bridgeModule(lib, "web-element", baseBridge),
       bridgeModule(lib, "add-html", baseBridge)],
-      function init(element, addHtml, player) {
-        var duration = player.getDuration()
+      function init(element, addHtml, duration) {
         var blockCount = duration*2
-        var blocks = document.querySelector(".blocks")
 
         var html = ""
         for(var i=0; i<blockCount; i++) {
           html += element(".block").html()
         }
+
+        var blocks = document.querySelector(".blocks")
+
         blocks.innerHTML = html
       })
 
+    var updateBlocks = baseBridge.defineFunction(
+      function updateBlocks(state, duration, currentTime) {
+        var blocks = document.querySelector(".blocks")
+
+        var elapsedPixels = currentTime/2 * 50
+        blocks.style["margin-left"] = "-"+elapsedPixels+"px"
+        console.log(state)
+      })
+
     baseBridge.defineFunction([
-      init],
-      function onYouTubePlayerAPIReady(init) {
+      init,
+      updateBlocks],
+      function onYouTubePlayerAPIReady(init, updateBlocks) {
+
+        function stateToString(state) {
+          return {
+            "-1": "unstarted",
+            "0": "ended",
+            "1": "playing",
+            "2": "paused",
+            "3": "buffering",
+            "5": "video cued",
+          }[state.data.toString()]}
 
         var player = new YT.Player(
           "player",{
@@ -89,7 +115,14 @@ library.using([
           "events": {
             "onReady": function() {
               init(
-                player)}}})
+                player.getDuration())},
+            "onStateChange": function(state) {
+              updateBlocks(
+                stateToString(state),
+                player.getDuration(),
+                player.getCurrentTime())
+            },
+          }})
       })
 
     site.start(1010)
