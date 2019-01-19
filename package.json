@@ -3,7 +3,10 @@
     "module-library": "*",
     "web-element": "*",
     "web-site": "*",
-    "browser-bridge": "*"
+    "browser-bridge": "*",
+    "add-html": "*",
+    "bridge-module": "*",
+    "basic-styles": "*"
   },
   "main": "meta.js"
 }
