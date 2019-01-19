@@ -54,6 +54,7 @@ library.using([
 
       element.style(
         ".blocks",{
+        "transition-timing-function": "linear",
         "white-space": "nowrap"}),
 
       element.style(
@@ -85,11 +86,21 @@ library.using([
 
     var updateBlocks = baseBridge.defineFunction(
       function updateBlocks(state, duration, currentTime) {
-        var blocks = document.querySelector(".blocks")
 
-        var elapsedPixels = currentTime/2 * 50
-        blocks.style["margin-left"] = "-"+elapsedPixels+"px"
         console.log(state)
+
+        var blocks = document.querySelector(".blocks")
+        var elapsedPixels = currentTime*2 * 50
+        var offsetAtEnd = duration*2*50
+        var timeToEnd = duration - currentTime
+
+        if (state == "playing") {
+          blocks.style["transition-duration"] = timeToEnd+"s"
+          blocks.style["margin-left"] = "-"+offsetAtEnd+"px"
+        } else {
+          blocks.style["transition-duration"] = "0s"
+          blocks.style["margin-left"] = "-"+elapsedPixels+"px"
+        }
       })
 
     baseBridge.defineFunction([
