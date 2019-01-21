@@ -1,5 +1,9 @@
 var library = require("module-library")(require)
 
+// People to edit:
+// https://www.youtube.com/watch?v=yha8PPlh7cQ
+
+
 library.using([
   library.ref(),
   "web-site",
@@ -65,25 +69,13 @@ library.using([
           "player": null,
           "interestingMode": null}})
 
-    var init = baseBridge.defineFunction([
-      bridgeModule(lib, "web-element", baseBridge),
-      bridgeModule(lib, "add-html", baseBridge)],
-      function init(element, addHtml, duration) {
-        var blockCount = duration*2
+    var updateBlocks = baseBridge.defineFunction([
+      state],
+      function updateBlocks(state) {
 
-        var html = ""
-        for(var i=0; i<blockCount; i++) {
-          html += element(".block.block-"+i).html()
-        }
-
-        var blocks = document.querySelector(".blocks")
-
-        blocks.innerHTML = html
-      })
-
-    var updateBlocks = baseBridge.defineFunction(
-      function updateBlocks(playerState, duration, currentTime) {
-
+        var playerState = state.playerState
+        var duration = state.player.getDuration()
+        var currentTime = state.player.getCurrentTime()
         console.log(playerState)
 
         var blocks = document.querySelector(".blocks")
@@ -100,43 +92,41 @@ library.using([
         }
       })
 
-    baseBridge.defineFunction([
+    var getCurrentBlockId = baseBridge.defineFunction([
+      state],
+      function getCurrentBlockId(state) {
+        return Math.floor(state.player.getCurrentTime() * 2)})
+
+    var setBlockInteresting = baseBridge.defineSingleton([
       state,
-      init,
-      updateBlocks],
-      function onYouTubePlayerAPIReady(state, init, updateBlocks) {
+      getCurrentBlockId],
+      function(state, getCurrentBlockId) {
 
-        function stateToString(playerState) {
-          return {
-            "-1": "unstarted",
-            "0": "ended",
-            "1": "playing",
-            "2": "paused",
-            "3": "buffering",
-            "5": "video cued",
-          }[playerState.data.toString()]}
+        function setBlockInteresting(fromBlockId, isInteresting) {
+          var blockId = getCurrentBlockId()
+          if (typeof fromBlockId == "undefined") {
+            fromBlockId = blockId
+          }
+          if (typeof isInteresting == "undefined") {
+            isInteresting = state.interestingMode
+          }
+          document.querySelector(".block-"+blockId).classList[isInteresting ? "add" : "remove"]("interesting")
 
-        var player = state.player = new YT.Player(
-          "player",{
-          "height": "360",
-          "width": "640",
-          "videoId": "Z7Seugla9KM",
-          "events": {
-            "onReady": function() {
-              init(
-                player.getDuration())},
-            "onStateChange": function(playerState) {
-              updateBlocks(
-                stateToString(playerState),
-                player.getDuration(),
-                player.getCurrentTime())
-            },
-          }})
+          var secondsAtBlockStart = blockId * 0.5
+          var secondsToNextBlock = state.player.getCurrentTime() - secondsAtBlockStart
+
+          if (state.playerState != "playing") { return }
+
+          setTimeout(
+            setBlockInteresting.bind(null, blockId, isInteresting),
+            secondsToNextBlock*1000)}
+
+        return setBlockInteresting
       })
 
-    var toggleInteresting = baseBridge.defineFunction([
-      state],
-      function toggleInteresting(state, isInteresting) {
+    var toggleInterestingMode = baseBridge.defineFunction([
+      state, setBlockInteresting, getCurrentBlockId],
+      function toggleInterestingMode(state, setBlockInteresting, getCurrentBlockId, isInteresting) {
 
         function getButton(isInteresting) {
           return document.querySelector((isInteresting ? ".interesting" : ".boring")+"-button")
@@ -161,9 +151,73 @@ library.using([
 
         }
 
-        var blockId = Math.floor(state.player.getCurrentTime() * 2)
-        document.querySelector(".block-"+blockId).classList.add("interesting")
+
+        setBlockInteresting(getCurrentBlockId(), isInteresting)
       })
+
+
+
+    // Initialize blocks
+
+    var init = baseBridge.defineFunction([
+      bridgeModule(lib, "web-element", baseBridge),
+      bridgeModule(lib, "add-html", baseBridge)],
+      function init(element, addHtml, duration) {
+        var blockCount = duration*2
+
+        var html = ""
+        for(var i=0; i<blockCount; i++) {
+          html += element(".block.block-"+i).html()
+        }
+
+        var blocks = document.querySelector(".blocks")
+
+        blocks.innerHTML = html
+      })
+
+
+
+    // YouTube Player Interface
+
+    baseBridge.defineFunction([
+      state,
+      init,
+      updateBlocks,
+      setBlockInteresting],
+      function onYouTubePlayerAPIReady(state, init, updateBlocks, setBlockInteresting) {
+
+        function stateToString(playerState) {
+          return {
+            "-1": "unstarted",
+            "0": "ended",
+            "1": "playing",
+            "2": "paused",
+            "3": "buffering",
+            "5": "video cued",
+          }[playerState.data.toString()]}
+
+        var player = state.player = new YT.Player(
+          "player",{
+          "height": "360",
+          "width": "640",
+          "videoId": "Z7Seugla9KM",
+          "events": {
+            "onReady": function() {
+              init(
+                player.getDuration())},
+            "onStateChange": function(playerState) {
+              state.playerState = stateToString(playerState)
+              updateBlocks()
+              if (state.playerState == "playing" && state.interestingMode != null) {
+                  setBlockInteresting()
+              }
+            },
+          }})
+      })
+
+
+
+    // Build the page
 
     var page = [
       element({
@@ -173,12 +227,12 @@ library.using([
       element(
         "button.unselected.interesting-button",
         "Mark as interesting",{
-        "onclick": toggleInteresting.withArgs(true).evalable()}),
+        "onclick": toggleInterestingMode.withArgs(true).evalable()}),
       " ",
       element(
         "button.unselected.boring-button",
-        "Mark as boring",{
-        "onclick": toggleInteresting.withArgs(false).evalable()}),
+        "Mark NOT interesting",{
+        "onclick": toggleInterestingMode.withArgs(false).evalable()}),
     ]
 
     site.start(1010)
