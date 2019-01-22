@@ -50,7 +50,9 @@ library.using([
 
       element.style(
         ".block",{
+        "cursor": "pointer",
         "display": "inline-block",
+        "padding": "none",
         "line-height": "45px",
         "text-align": "center",
         "font-size": "12px",
@@ -72,7 +74,9 @@ library.using([
       function() {
         return {
           "player": null,
-          "interestingMode": null}})
+          "interestingMode": null,
+          "isBlockInteresting": {}}
+      })
 
     var updateBlocks = baseBridge.defineFunction([
       state],
@@ -103,15 +107,45 @@ library.using([
       function getCurrentBlockId(state) {
         return Math.floor(state.player.getCurrentTime() * 2)})
 
-    var setBlockInteresting = baseBridge.defineSingleton([
-      state,
-      getCurrentBlockId],
-      function(state, getCurrentBlockId) {
+    var setBlockInteresting = baseBridge.defineFunction([
+      state],
+      function setBlockInteresting(state, blockId, isInteresting) {
 
-        function setBlockInteresting(fromBlockId, isInteresting) {
+        var wasInteresting = state.isBlockInteresting[blockId]
+
+        if (isInteresting === wasInteresting) {
+          return
+        }
+
+        state.isBlockInteresting[blockId] = isInteresting
+
+        var el = document.querySelector(".block-"+blockId)
+
+        if (isInteresting) {
+          el.classList.add("interesting")
+        } else {
+          el.classList.remove("interesting")
+        }
+      })
+
+    var toggleBlockInteresting = baseBridge.defineFunction([
+      state,
+      setBlockInteresting],
+      function toggleBlockInteresting(state, setBlockInteresting, blockId) {
+        var wasInteresting = state.isBlockInteresting[blockId]
+        setBlockInteresting(blockId, !wasInteresting)
+      })
+
+    var updateCurrentBlockInteresting = baseBridge.defineSingleton(
+      "updateCurrentBlockInteresting",[
+      state,
+      getCurrentBlockId,
+      setBlockInteresting],
+      function(state, getCurrentBlockId, setBlockInteresting) {
+
+        function updateCurrentBlockInteresting(fromBlockId, isInteresting) {
 
           var blockId = getCurrentBlockId()
-
 
           // If no interestingness was passed, it's because we changed state to playing again, and we just want to use the store mode and start from here
 
@@ -128,7 +162,7 @@ library.using([
             return
           }
 
-          document.querySelector(".block-"+blockId).classList[isInteresting ? "add" : "remove"]("interesting")
+          setBlockInteresting(blockId, isInteresting)
 
           var secondsAtBlockEnd = blockId * 0.5 + 0.5
 
@@ -139,15 +173,17 @@ library.using([
           if (state.playerState != "playing") { return }
 
           setTimeout(
-            setBlockInteresting.bind(null, blockId, isInteresting),
+            updateCurrentBlockInteresting.bind(null, blockId, isInteresting),
             secondsToNextBlock*1000)}
 
-        return setBlockInteresting
+        return updateCurrentBlockInteresting
       })
 
     var toggleInterestingMode = baseBridge.defineFunction([
-      state, setBlockInteresting, getCurrentBlockId],
-      function toggleInterestingMode(state, setBlockInteresting, getCurrentBlockId, isInteresting) {
+      state,
+      updateCurrentBlockInteresting,
+      getCurrentBlockId],
+      function toggleInterestingMode(state, updateCurrentBlockInteresting, getCurrentBlockId, isInteresting) {
 
         function getButton(isInteresting) {
           return document.querySelector((isInteresting ? ".interesting" : ".boring")+"-button")
@@ -173,7 +209,7 @@ library.using([
         }
 
 
-        setBlockInteresting(getCurrentBlockId(), isInteresting)
+        updateCurrentBlockInteresting(getCurrentBlockId(), isInteresting)
       })
 
 
@@ -182,25 +218,32 @@ library.using([
 
     var init = baseBridge.defineFunction([
       bridgeModule(lib, "web-element", baseBridge),
-      bridgeModule(lib, "add-html", baseBridge)],
-      function init(element, addHtml, duration) {
+      bridgeModule(lib, "add-html", baseBridge),
+      toggleBlockInteresting.asCall()],
+      function init(element, addHtml, toggleBlockInteresting, duration) {
         var blockCount = duration*2
 
         var html = ""
-        for(var i=0; i<blockCount; i++) {
-          var seconds = Math.floor(i/2)
-          var remainder = i/2 - seconds > 0.1
+        for(var blockId=0; blockId<blockCount; blockId++) {
+          var seconds = Math.floor(blockId/2)
+          var isSecondHalf = blockId/2 - seconds > 0.1
           var minutes = Math.floor(seconds/60)
           var seconds = seconds - 60*minutes
           var label = seconds
-          if (remainder) {
+          if (isSecondHalf) {
             label += "b"
           }
           if (minutes) {
             label = minutes+"m"+label
           }
 
-          html += element(".block.block-"+i, label).html()
+          var el = element(
+            ".block.block-"+blockId,
+            label,{
+            "onclick": toggleBlockInteresting.withArgs(blockId).evalable()
+            })
+
+          html += el.html()
         }
 
         var blocks = document.querySelector(".blocks")
@@ -216,8 +259,8 @@ library.using([
       state,
       init,
       updateBlocks,
-      setBlockInteresting],
-      function onYouTubePlayerAPIReady(state, init, updateBlocks, setBlockInteresting) {
+      updateCurrentBlockInteresting],
+      function onYouTubePlayerAPIReady(state, init, updateBlocks, updateCurrentBlockInteresting) {
 
         function stateToString(playerState) {
           return {
@@ -241,8 +284,9 @@ library.using([
             "onStateChange": function(playerState) {
               state.playerState = stateToString(playerState)
               updateBlocks()
+
               if (state.playerState == "playing" && state.interestingMode != null) {
-                  setBlockInteresting()
+                  updateCurrentBlockInteresting()
               }
             },
           }})
