@@ -40,6 +40,7 @@ library.using([
       element.style(
         ".timeline",{
         "border-left": "2px solid black",
+        "margin-left": "50px",
         "padding": "5px 0"}),
 
       element.style(
@@ -76,19 +77,21 @@ library.using([
         var playerState = state.playerState
         var duration = state.player.getDuration()
         var currentTime = state.player.getCurrentTime()
-        console.log(playerState)
+        console.log(playerState, "updating time to", currentTime)
 
         var blocks = document.querySelector(".blocks")
         var elapsedPixels = currentTime*2 * 50
         var offsetAtEnd = duration*2*50
         var timeToEnd = duration - currentTime
 
+        blocks.style["transition-duration"] = "0s"
+        blocks.style["margin-left"] = "-"+elapsedPixels+"px"
+
         if (playerState == "playing") {
-          blocks.style["transition-duration"] = timeToEnd+"s"
-          blocks.style["margin-left"] = "-"+offsetAtEnd+"px"
-        } else {
-          blocks.style["transition-duration"] = "0s"
-          blocks.style["margin-left"] = "-"+elapsedPixels+"px"
+          setTimeout(function() {
+            blocks.style["transition-duration"] = timeToEnd+"s"
+            blocks.style["margin-left"] = "-"+offsetAtEnd+"px"
+          })
         }
       })
 
@@ -103,18 +106,32 @@ library.using([
       function(state, getCurrentBlockId) {
 
         function setBlockInteresting(fromBlockId, isInteresting) {
+
           var blockId = getCurrentBlockId()
+
+          // If the interesting mode has changed since we started this recursive loop, give up. toggleInterestingMode will start a new loop
+
+          if (state.interestingMode != isInteresting) {
+            return
+          }
+
+          // If no interestingness was passed, it's because we changed state to playing again, and we just want to use the store mode and start from here
+
           if (typeof fromBlockId == "undefined") {
             fromBlockId = blockId
           }
           if (typeof isInteresting == "undefined") {
             isInteresting = state.interestingMode
           }
+
           document.querySelector(".block-"+blockId).classList[isInteresting ? "add" : "remove"]("interesting")
 
-          var secondsAtBlockStart = blockId * 0.5
-          var secondsToNextBlock = state.player.getCurrentTime() - secondsAtBlockStart
+          var secondsAtBlockEnd = blockId * 0.5 + 0.5
 
+          var secondsToNextBlock = secondsAtBlockEnd - state.player.getCurrentTime()
+
+          // If we're playing, we're going to want to set a timeout to do this again. If not we're just done.
+          
           if (state.playerState != "playing") { return }
 
           setTimeout(
