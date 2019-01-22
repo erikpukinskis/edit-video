@@ -51,6 +51,10 @@ library.using([
       element.style(
         ".block",{
         "display": "inline-block",
+        "line-height": "45px",
+        "text-align": "center",
+        "font-size": "12px",
+        "color": "white",
         "margin-right": "5px",
         "width": "45px",
         "height": "45px",
@@ -77,7 +81,6 @@ library.using([
         var playerState = state.playerState
         var duration = state.player.getDuration()
         var currentTime = state.player.getCurrentTime()
-        console.log(playerState, "updating time to", currentTime)
 
         var blocks = document.querySelector(".blocks")
         var elapsedPixels = currentTime*2 * 50
@@ -109,11 +112,6 @@ library.using([
 
           var blockId = getCurrentBlockId()
 
-          // If the interesting mode has changed since we started this recursive loop, give up. toggleInterestingMode will start a new loop
-
-          if (state.interestingMode != isInteresting) {
-            return
-          }
 
           // If no interestingness was passed, it's because we changed state to playing again, and we just want to use the store mode and start from here
 
@@ -124,6 +122,12 @@ library.using([
             isInteresting = state.interestingMode
           }
 
+          // If the interesting mode has changed since we started this recursive loop, give up. toggleInterestingMode will start a new loop
+
+          if (state.interestingMode != isInteresting) {
+            return
+          }
+
           document.querySelector(".block-"+blockId).classList[isInteresting ? "add" : "remove"]("interesting")
 
           var secondsAtBlockEnd = blockId * 0.5 + 0.5
@@ -131,7 +135,7 @@ library.using([
           var secondsToNextBlock = secondsAtBlockEnd - state.player.getCurrentTime()
 
           // If we're playing, we're going to want to set a timeout to do this again. If not we're just done.
-          
+
           if (state.playerState != "playing") { return }
 
           setTimeout(
@@ -184,7 +188,19 @@ library.using([
 
         var html = ""
         for(var i=0; i<blockCount; i++) {
-          html += element(".block.block-"+i).html()
+          var seconds = Math.floor(i/2)
+          var remainder = i/2 - seconds > 0.1
+          var minutes = Math.floor(seconds/60)
+          var seconds = seconds - 60*minutes
+          var label = seconds
+          if (remainder) {
+            label += "b"
+          }
+          if (minutes) {
+            label = minutes+"m"+label
+          }
+
+          html += element(".block.block-"+i, label).html()
         }
 
         var blocks = document.querySelector(".blocks")
