@@ -40,13 +40,24 @@ library.using([
       element.style(
         ".timeline",{
         "border-left": "2px solid black",
-        "margin-left": "50px",
-        "padding": "5px 0"}),
+        "margin-left": "320px",
+        "padding": "5px 0",
+        "max-width": "100%"}),
 
       element.style(
         ".blocks",{
         "transition-timing-function": "linear",
         "white-space": "nowrap"}),
+
+      element.style(
+        ".page",{
+        "max-width": "100%",
+        "overflow-x": "hidden",
+        "padding": "10px"}),
+
+      element.style(
+        "body",{
+        "margin": "0"}),
 
       element.style(
         ".block",{
@@ -359,7 +370,7 @@ library.using([
 
     // Build the page
 
-    var page = [
+    var page = element(".page",[
       element({
         "id": "player"}),
       element(".timeline",
@@ -378,7 +389,7 @@ library.using([
           "button",
           "Play only interesting",{
           "onclick": playOnlyInteresting.evalable()})),
-    ]
+    ])
 
     site.start(1010)
 
