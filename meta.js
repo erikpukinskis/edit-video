@@ -74,6 +74,7 @@ library.using([
       function() {
         return {
           "player": null,
+          "blockCount": null,
           "interestingMode": null,
           "isBlockInteresting": {}}
       })
@@ -217,11 +218,12 @@ library.using([
     // Initialize blocks
 
     var init = baseBridge.defineFunction([
+      state,
       bridgeModule(lib, "web-element", baseBridge),
       bridgeModule(lib, "add-html", baseBridge),
       toggleBlockInteresting.asCall()],
-      function init(element, addHtml, toggleBlockInteresting, duration) {
-        var blockCount = duration*2
+      function init(state, element, addHtml, toggleBlockInteresting, duration) {
+        var blockCount = state.blockCount = duration*2
 
         var html = ""
         for(var blockId=0; blockId<blockCount; blockId++) {
@@ -251,6 +253,68 @@ library.using([
         blocks.innerHTML = html
       })
 
+    var seekAndSchedule = baseBridge.defineSingleton([
+      state],
+      function(state) {
+
+        function seekAndSchedule(blockId) {
+
+          if (blockId == state.blockCount) {
+            state.player.pauseVideo()
+            return }          
+          var seconds = blockId/2
+
+          state.player.seekTo(
+            seconds)
+
+          if (state.playerState != "playing") {
+            state.player.playVideo()
+          }
+
+          while(state.isBlockInteresting[blockId] && blockId < state.blockCount) {
+            blockId++ }
+
+          if (blockId == state.blockCount) {
+            return }
+
+          var secondsAtSegmentEnd = blockId/2+0.5
+
+          var secondsTilNextSeek = secondsAtSegmentEnd - seconds
+
+          while(!state.isBlockInteresting[blockId] && blockId < state.blockCount) {
+            blockId++ }
+
+          setTimeout(
+            seekAndSchedule.bind(
+              null,
+              blockId),
+            secondsTilNextSeek*1000)}
+
+        return seekAndSchedule
+      })
+
+
+    var playOnlyInteresting = baseBridge.defineFunction([
+      state,
+      seekAndSchedule,
+      toggleInterestingMode],
+      function(state, seekAndSchedule) {
+
+        if (!state.interestingMode != null) {
+          toggleInterestingMode(state.interestingMode)
+        }
+
+        var blockId = 0
+        while(!state.isBlockInteresting[blockId] && blockId < state.blockCount) {
+          blockId++
+        }
+
+        if (blockId == state.blockCount) {
+          return
+        }
+
+        seekAndSchedule(blockId)
+      })
 
 
     // YouTube Player Interface
@@ -284,7 +348,6 @@ library.using([
             "onStateChange": function(playerState) {
               state.playerState = stateToString(playerState)
               updateBlocks()
-
               if (state.playerState == "playing" && state.interestingMode != null) {
                   updateCurrentBlockInteresting()
               }
@@ -310,6 +373,11 @@ library.using([
         "button.unselected.boring-button",
         "Mark NOT interesting",{
         "onclick": toggleInterestingMode.withArgs(false).evalable()}),
+      element("p",
+        element(
+          "button",
+          "Play only interesting",{
+          "onclick": playOnlyInteresting.evalable()})),
     ]
 
     site.start(1010)
