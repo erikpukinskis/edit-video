@@ -327,6 +327,22 @@ library.using([
         seekAndSchedule(blockId)
       })
 
+    var handleKeyboardShortcut = baseBridge.defineFunction(
+      state,
+      function handleKeyboardShortcut(event) {
+        if (event.key == "k") {
+          if (state.playerState == "playing") {
+            state.player.pauseVideo()
+          } else {
+            state.player.playVideo()
+          }
+        } else if (event.key == "ArrowRight") {
+          state.player.seekTo(state.player.getCurrentTime()+10)
+        } else if (event.key == "ArrowLeft") {
+          state.player.seekTo(state.player.getCurrentTime()-10)
+        }
+      })
+
 
     // YouTube Player Interface
 
@@ -382,7 +398,7 @@ library.using([
       " ",
       element(
         "button.unselected.boring-button",
-        "Mark NOT interesting",{
+        "Clear interesting marks",{
         "onclick": toggleInterestingMode.withArgs(false).evalable()}),
       element("p",
         element(
@@ -391,11 +407,18 @@ library.using([
           "onclick": playOnlyInteresting.evalable()})),
     ])
 
+    var body = element(
+      "body",{
+      "onkeydown": handleKeyboardShortcut.withArgs(
+          baseBridge.event)
+          .evalable()},
+      page)
+
     site.start(1010)
 
     site.addRoute(
       "get",
       "/",
-      baseBridge.requestHandler(page))
+      baseBridge.requestHandler(body))
   }
 )
