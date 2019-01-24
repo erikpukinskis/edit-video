@@ -92,11 +92,18 @@ library.using([
 
     var updateBlocks = baseBridge.defineFunction([
       state],
-      function updateBlocks(state) {
-
+      function updateBlocks(state, time) {
+        if (state.pauseOnPlay) {
+          return
+        }
         var playerState = state.playerState
         var duration = state.player.getDuration()
-        var currentTime = state.player.getCurrentTime()
+        if (typeof time != "undefined") {
+          var currentTime = time
+        } else {
+          var currentTime = state.player.getCurrentTime()
+        }
+        console.log("time seems to be "+currentTime)
 
         var blocks = document.querySelector(".blocks")
         var elapsedPixels = currentTime*2 * 50
@@ -327,19 +334,27 @@ library.using([
         seekAndSchedule(blockId)
       })
 
-    var handleKeyboardShortcut = baseBridge.defineFunction(
+    var handleKeyboardShortcut = baseBridge.defineFunction([
       state,
-      function handleKeyboardShortcut(event) {
+      updateBlocks],
+      function handleKeyboardShortcut(state, updateblocks, event) {
         if (event.key == "k") {
           if (state.playerState == "playing") {
             state.player.pauseVideo()
           } else {
             state.player.playVideo()
           }
-        } else if (event.key == "ArrowRight") {
-          state.player.seekTo(state.player.getCurrentTime()+10)
-        } else if (event.key == "ArrowLeft") {
-          state.player.seekTo(state.player.getCurrentTime()-10)
+        } else if (event.key == "ArrowRight" || event.key == "ArrowLeft") {
+          console.log("YAW!")
+          var dt = event.key == "ArrowRight" ? 6 : -6
+          var targetTime = state.player.getCurrentTime()+dt
+          targetTime = Math.max(0, targetTime)
+          console.log("seeking to "+targetTime)
+          state.player.seekTo(targetTime)
+          updateBlocks(targetTime)
+          if (typeof state.playerState == "undefined") {
+            state.pauseOnPlay = true
+          }
         }
       })
 
@@ -374,7 +389,15 @@ library.using([
                 player.getDuration())},
             "onStateChange": function(playerState) {
               state.playerState = stateToString(playerState)
+              console.log(state.playerState+" state")
               updateBlocks()
+
+              if (state.playerState == "playing" && state.pauseOnPlay) {
+                state.player.pauseVideo()
+                state.pauseOnPlay = false
+                return
+              }
+
               if (state.playerState == "playing" && state.interestingMode != null) {
                   updateCurrentBlockInteresting()
               }
