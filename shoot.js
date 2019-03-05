@@ -62,24 +62,46 @@ library.using([
       })
 
     var stylesheet = element.stylesheet([
+
       element.style(".prompter-text",{
+        "color": "black",
         "display": "none",
         ".prompted": {
           "display": "block"},
         "font-size": "3em",
+        "height": "6em",
+        "padding": "1em",
+
+        ".next": {
+          "display": "block",
+          "color": "#999",
+          "height": "0",
+          "margin": "0",
+          "text-overflow": "ellipsis"},
+
+        ".next .prompt-summary": {
+            "display": "none" },      
+        }),
+
+      element.style(),
+
+      element.style(".prompt-summary", {
+        "background": "black",
+        "color": "white",
+        "display": "block",
+        "width": "5em",
+        "margin": "1em auto",
         "text-align": "center",
-        "height": "4em",
-        "margin-top": "1em" }),
-      ])
+        "font-size": "50%"}),
+    ])
 
     baseBridge.addToHead(stylesheet)
 
     var advance = baseBridge.defineFunction(
       function advancePrompter(prompterState, event) {
-
         if (event.key == " ") {
           var direction = 1
-        } else if (event.key = "ArrowLeft") {
+        } else if (event.key == "ArrowLeft") {
           var direction = -1
         } else if (event.key == "ArrowRight") {
           var direction = 1
@@ -98,28 +120,48 @@ library.using([
           .classList.remove(
             "prompted")
 
+        document.querySelector(
+          ".prompter-text.next")
+          .classList.remove(
+            "next")
+
         // CSS indexes start at 1:
         var cssIndex = nextLine + 1
-
-        var selector = ".prompter-text:nth-of-type("+cssIndex+")"
+        var nextIndex = nextLine + 2
 
         document.querySelector(
-          selector)
+          ".prompter-text:nth-of-type("+cssIndex+")")
           .classList.add(
             "prompted")
 
+        document.querySelector(
+          ".prompter-text:nth-of-type("+nextIndex+")")
+          .classList.add(
+            "next")
+
         prompterState.currentLine = nextLine
       })
+
+    var summary = element.template(
+      ".prompt-summary",
+      function(number, total) {
+        number++
+        this.addChild(
+          number+" / "+total)})
 
     function shoot(bridge, lines) {
       var lineEls = lines.map(
         function(line, i) {
           var el = element(
             ".prompter-text",
+            summary(i,lines.length),
             line)
           if (i == 0) {
             el.addSelector(
               ".prompted")}
+          if (i == 1) {
+            el.addSelector(
+              ".next")}
           return el})
 
       var instruction = element("p", element.style({"text-align": "center"}), "Press Space Bar to advance")
@@ -132,9 +174,8 @@ library.using([
             currentLine: 0,
             lineCount: count }})
 
-      debugger
       bridge.addBodyEvent(
-        "onkeypress",
+        "onkeydown",
         advance.withArgs(prompterSingleton, bridge.event).evalable())
 
       var page = element(
