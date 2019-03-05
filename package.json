@@ -1,12 +1,12 @@
 {
   "dependencies": {
+    "add-html": "*",
+    "basic-styles": "*",
+    "bridge-module": "*",
+    "browser-bridge": "^0.170.0",
     "module-library": "*",
     "web-element": "*",
-    "web-site": "*",
-    "browser-bridge": "*",
-    "add-html": "*",
-    "bridge-module": "*",
-    "basic-styles": "*"
+    "web-site": "*"
   },
   "main": "meta.js"
 }
