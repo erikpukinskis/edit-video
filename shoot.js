@@ -112,6 +112,9 @@ library.using([
 
         var nextLine = prompterState.currentLine + direction
 
+        console.log("prompter was at", prompterState.currentLine, "but we're trying to set it to", nextLine)
+
+        console.log("max is", prompterState.lineCount)
         if (nextLine == prompterState.lineCount || nextLine < 0) {
           return }
 
@@ -120,10 +123,12 @@ library.using([
           .classList.remove(
             "prompted")
 
-        document.querySelector(
+        var next = document.querySelector(
           ".prompter-text.next")
-          .classList.remove(
-            "next")
+
+        if (next) {
+          next.classList.remove(
+            "next")}
 
         // CSS indexes start at 1:
         var cssIndex = nextLine + 1
@@ -134,12 +139,16 @@ library.using([
           .classList.add(
             "prompted")
 
-        document.querySelector(
-          ".prompter-text:nth-of-type("+nextIndex+")")
-          .classList.add(
-            "next")
+        if (nextIndex < prompterState.lineCount) {        
+          document.querySelector(
+            ".prompter-text:nth-of-type("+nextIndex+")")
+            .classList.add(
+              "next")
+        }
 
         prompterState.currentLine = nextLine
+
+        console.log("now prompter is at", prompterState.currentLine)
       })
 
     var summary = element.template(
@@ -175,7 +184,7 @@ library.using([
             lineCount: count }})
 
       bridge.addBodyEvent(
-        "onkeydown",
+        "onkeyup",
         advance.withArgs(prompterSingleton, bridge.event).evalable())
 
       var page = element(

@@ -3,7 +3,7 @@
     "add-html": "*",
     "basic-styles": "*",
     "bridge-module": "*",
-    "browser-bridge": "^0.170.0",
+    "browser-bridge": "^0.173.0",
     "module-library": "*",
     "web-element": "*",
     "web-site": "*"
