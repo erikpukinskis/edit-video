@@ -101,6 +101,10 @@ library.using([
       function advancePrompter(prompterState, event) {
         if (event.key == " ") {
           var direction = 1
+        } else if (event.key == "s") {
+          var direction = -1*prompterState.currentLine
+        } else if (event.key == "e") {
+          var direction = prompterState.lineCount - prompterState.currentLine - 1
         } else if (event.key == "ArrowLeft") {
           var direction = -1
         } else if (event.key == "ArrowRight") {
