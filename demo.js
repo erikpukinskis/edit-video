@@ -153,6 +153,11 @@ library.using([
       function toggleBlockInteresting(state, setBlockInteresting, blockId) {
         var wasInteresting = state.isBlockInteresting[blockId]
         setBlockInteresting(blockId, !wasInteresting)
+        var startTime = (blockId - 2)/2
+        state.player.seekTo(startTime)
+        setTimeout(function() {
+          state.player.pauseVideo()
+        }, 2000)
       })
 
     var updateCurrentBlockInteresting = baseBridge.defineSingleton(
@@ -311,6 +316,19 @@ library.using([
         return seekAndSchedule
       })
 
+    var firstInterestingBlockAfter = baseBridge.defineFunction([
+      state],
+      function firstInterestingBlockAfter(state, afterId) {
+        var blockId = afterId
+
+        while(!state.isBlockInteresting[blockId] && blockId < state.blockCount) {
+          blockId++
+        }
+
+        if (blockId != state.blockCount) {
+          return blockId
+        }
+      })
 
     var playOnlyInteresting = baseBridge.defineFunction([
       state,
@@ -322,14 +340,9 @@ library.using([
           toggleInterestingMode(state.interestingMode)
         }
 
-        var blockId = 0
-        while(!state.isBlockInteresting[blockId] && blockId < state.blockCount) {
-          blockId++
-        }
+        var blockId = firstInterestingBlockAfter(0)
 
-        if (blockId == state.blockCount) {
-          return
-        }
+
 
         seekAndSchedule(blockId)
       })
