@@ -475,6 +475,6 @@ module.exports = library.export(
       }),
     ])
 
-    return editVide
+    return editVideo
   }
 )
