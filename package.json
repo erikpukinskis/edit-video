@@ -1,13 +1,16 @@
 {
+  "name": "video-editor",
+  "version": "0.0.0",
+  "description": "push-button video editor for basic cutting of a video into slices",
   "dependencies": {
     "add-html": "*",
     "basic-styles": "*",
     "bridge-module": "*",
-    "browser-bridge": "^0.174.0",
+    "browser-bridge": "^0.191.0",
     "make-request": "^0.43.0",
     "module-library": "*",
     "web-element": "*",
     "web-site": "*"
   },
-  "main": "meta.js"
+  "main": "video-editor.js"
 }
