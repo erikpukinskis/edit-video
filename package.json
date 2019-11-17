@@ -1,6 +1,6 @@
 {
   "name": "edit-video",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "push-button video editor for basic cutting of a video into slices",
   "dependencies": {
     "add-html": "*",
