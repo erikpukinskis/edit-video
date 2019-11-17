@@ -12,5 +12,6 @@
     "web-element": "*",
     "web-site": "*"
   },
+  "repository": "https://github.com/erikpukinskis/edit-video",
   "main": "edit-video.js"
 }
