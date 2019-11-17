@@ -7,7 +7,7 @@ library.using([
   "web-site",
   "browser-bridge",
   "./"],
-  function(WebSite, BrowserBridge, videoEditor) {
+  function(WebSite, BrowserBridge, editVideo) {
 
     var site = new WebSite()
 
@@ -17,7 +17,7 @@ library.using([
       "get",
       "/",
       function(request, response) {
-        return videoEditor(
+        return editVideo(
           baseBridge.forResponse(
             response))})
 

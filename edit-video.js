@@ -1,7 +1,7 @@
 var library = require("module-library")(require)
 
 module.exports = library.export(
-  "video-editor",[
+  "edit-video",[
   library.ref(),
   "web-element",
   "add-html",
@@ -9,7 +9,7 @@ module.exports = library.export(
   "basic-styles"],
   function(lib, element, addHtml, bridgeModule, basicStyles) {
 
-    function videoEditor(bridge) {
+    function editVideo(bridge) {
 
       var funcs = prepareBridge(bridge)
 
@@ -475,6 +475,6 @@ module.exports = library.export(
       }),
     ])
 
-    return videoEditor
+    return editVide
   }
 )
